@@ -1,6 +1,6 @@
 # ME 5661 Composite Materials
 # Jacob Miske
-# For VTP Composites
+# For composite modeling
 
 import numpy as np
 
@@ -16,16 +16,20 @@ class Composite():
         self.Vm = 0.5   # Volume fraction of fibers
         self.theta = [0, -1, 1]  # Angle of fibers in each layer in radians
         self.layers = len(self.theta)
-        self.E1 = [0]
-        self.E2 = [0]
-        self.G12 = [0]
+        self.E1 = 1
+        self.E2 = 1
+        self.G12 = 1
+        self.Ex = [1,1,1]
+        self.Ey = [1,1,1]
+        self.G12 = [1,1,1]
 
     def set_composite_longitudinal_modulus(self):
         """
         Given a composite, return the longitudinal modulus
         :return:
         """
-        return self.Vf * self.Ef + self.Vm * self.Em
+        self.E1 = self.Vf * self.Ef + self.Vm * self.Em
+        return 0
 
 
     def set_composite_transverse_modulus(self):
@@ -33,7 +37,7 @@ class Composite():
         Given a composite, return the transverse modulus
         :return:
         """
-        return (self.Em * self.Ef)/(self.Vf * self.Em + self.Vf * self.Ef)
+        self.E2 = (self.Em * self.Ef)/(self.Vf * self.Em + self.Vf * self.Ef)
 
 
     def set_composite_shear_modulus(self):
@@ -41,19 +45,19 @@ class Composite():
         Given a composite, return the shear modulus
         :return:
         """
-        return (self.Gm * self.Gf)/(self.Vf * self.Gm + self.Vf * self.Gf)
+        self.G12 = (self.Gm * self.Gf)/(self.Vf * self.Gm + self.Vf * self.Gf)
 
 
-def get_composite_modulus_at_angle(comp):
-    """
-    Given a composite, return the modulus at angle
-    :return:
-    """
-    comp_mod_by_layer = []
-    for i, count in enumerate(comp.theta, 0):
-        comp_mod_by_layer.append( (comp.E1[count] * comp.E2[count])/
-                                 (comp.E1[count] * np.sin(comp.theta[i])**4 + 2*comp.G12[count] * np.sin(comp.theta[i])**2 * np.cos(comp.theta[i])**2 + comp.E2[count] * np.cos(comp.theta[i])**4) )
-    return comp_mod_by_layer
+    def set_composite_modulus_by_layer(self):
+        """
+        Given a composite, return the modulus at angle
+        :return:
+        """
+        comp_mod_by_layer = []
+        for i, count in enumerate(self.theta, 0):
+            comp_mod_by_layer.append( (self.E1 * self.E2)/
+                                    (self.E1 * np.sin(self.theta[i])**4 + 2*self.G12 * np.sin(self.theta[i])**2 * np.cos(self.theta[i])**2 + self.E2 * np.cos(self.theta[i])**4) )
+        self.Ex = comp_mod_by_layer
 
 
 def get_data_from_model():
@@ -88,9 +92,8 @@ if __name__ == '__main__':
     VTP1.set_composite_longitudinal_modulus()
     VTP1.set_composite_transverse_modulus()
     VTP1.set_composite_shear_modulus()
-
-    res1 = get_composite_modulus_at_angle(comp=VTP1)
-    print(res1)
+    VTP1.set_composite_modulus_by_layer()
+    print(VTP1.Ex)
 
     # Second VTP cube
     VTP2 = Composite()
@@ -99,10 +102,9 @@ if __name__ == '__main__':
     VTP2.Gm = 0.8 # MPa
     VTP2.Gf = 1.5 # MPa
     VTP2.Vf = 0.8 # nd
-    VTP2.Vm = 0.2
+    VTP2.Vm = 0.2 # nd
 
     VTP2.set_composite_longitudinal_modulus()
     VTP2.set_composite_transverse_modulus()
     VTP2.set_composite_shear_modulus()
-
-    get_composite_modulus_at_angle(comp=VTP2)
+    VTP2.set_composite_modulus_by_layer()
