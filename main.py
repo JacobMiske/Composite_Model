@@ -6,6 +6,9 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+params = {'mathtext.default': 'regular' }          
+plt.rcParams.update(params)
+
 class Composite():
 
     def __init__(self):
@@ -98,19 +101,7 @@ def get_stress_strain_from_data(displacement, force, area, start_length):
     return epsilon, sigma
 
 
-def plot_model_data(col2, col3):
-    """
-    Plot model data
-    """
-    plt.figure(figsize=(8, 6))
-    print(type(col2))
-    plt.plot(col2, col3, label="At 100 Kilocycles Sawzall")
-    plt.legend()
-    plt.grid()
-    plt.xlabel('Deformation [mm]')
-    plt.ylabel('Force [kN]')
-    plt.show()
-    return 0
+
 
 
 def plot_experimental_data(col1, col2, plot_title, file_name):
@@ -118,14 +109,14 @@ def plot_experimental_data(col1, col2, plot_title, file_name):
     Plot experimental data
     """
     # run linear fit
-    linear_coeffs = np.polyfit(col1[-1800:], col2[-1800:], 1)
+    linear_coeffs = np.polyfit(col1[-400:], col2[-400:], 1)
     y_line = [i * linear_coeffs[0] + linear_coeffs[1] for i in col1]
     # Generate plot
     fig, ax = plt.subplots(figsize=(8, 6))
     plt.plot(col1, col2, label="Experimental Data")
-    plt.plot(col1, y_line, label="linear fit", linestyle='dashed')
-    plt.xlim([0, 0.1])
-    plt.ylim([0, 800])
+    plt.plot(col1, y_line, label="Linear Fit", linestyle='dashed')
+    plt.xlim([0, max(col1)])
+    plt.ylim([0, max(col2)])
     # place a text box in upper left in axes coords
     ax.text(0.05, 0.95, "Young's Mod: " + str(round(linear_coeffs[0], 2)) + " kPa", transform=ax.transAxes, fontsize=14,
         verticalalignment='top')
@@ -139,11 +130,52 @@ def plot_experimental_data(col1, col2, plot_title, file_name):
     return 0
 
 
+def plot_all_experimental_data(col1_1, col2_1, col1_2, col2_2, col1_3, col2_3, plot_title, file_name):
+    """
+    Plot experimental data from all three cases
+    """
+    # Generate plot
+    fig, ax = plt.subplots(figsize=(8, 6))
+    plt.plot(col1_1, col2_1, label="Solid TPU")
+    plt.plot(col1_2, col2_2, label="Vf=0.3 Composite Cube")
+    plt.plot(col1_3, col2_3, label="Vf=0.8 Composite Cube")
+    # plt.xlim([0, max(col1)])
+    # plt.ylim([0, max(col2)])
+    plt.legend()
+    plt.grid()
+    plt.xlabel('Strain')
+    plt.ylabel('Stress [kPa]')
+    plt.title(plot_title)
+    plt.savefig(file_name)
+    plt.show()
+    return 0
+
+
+def plot_model_data(col2, col3):
+    """
+    Plot model data
+    """
+    plt.figure(figsize=(8, 6))
+    print(type(col2))
+    plt.plot(col2, col3)
+    plt.legend()
+    plt.grid()
+    plt.xlabel('Deformation [mm]')
+    plt.ylabel('Force [kN]')
+    plt.show()
+    return 0
+
+
 def plot_model_against_test():
     """
     Plot data from model and test
     """
     return 0
+
+
+def split_list(a_list):
+    half = len(a_list)//2
+    return a_list[:half], a_list[half:]
 
 
 if __name__ == '__main__':
@@ -163,8 +195,8 @@ if __name__ == '__main__':
     VTP1.Ef = 10  # MPa
     VTP1.Gm = 0.8 # MPa
     VTP1.Gf = 1.5 # MPa
-    VTP1.Vf = 0.5 
-    VTP1.Vm = 0.5
+    VTP1.Vf = 0.3 
+    VTP1.Vm = 0.7
     VTP1.set_composite_longitudinal_modulus()
     VTP1.set_composite_transverse_modulus()
     VTP1.set_composite_shear_modulus()
@@ -191,18 +223,33 @@ if __name__ == '__main__':
     L0_0 = 0.03*1000 # millimeters
     L0_1 = 0.0290*1000 # millimeters
     L0_2 = 0.0295*1000 # millimeters
-    
+
     time0, disp0, force0, rows0 = get_data_from_test(file_path="./solid_TPU_cube_1.csv")
-    time1, disp1, force1, rows1 = get_data_from_test(file_path="./Vf5_cube_1.csv")
+    time1, disp1, force1, rows1 = get_data_from_test(file_path="./Vf3_cube_1.csv")
     time2, disp2, force2, rows2 = get_data_from_test(file_path="./Vf8_cube_1.csv")
     strain0, stress0 = get_stress_strain_from_data(displacement=list(disp0), force=list(force0), area=area0, start_length=L0_0)
     strain1, stress1 = get_stress_strain_from_data(displacement=list(disp1), force=list(force1), area=area1, start_length=L0_1)
     strain2, stress2 = get_stress_strain_from_data(displacement=list(disp2), force=list(force2), area=area2, start_length=L0_2)
 
-    # Plot each test case on it's own
-    plot_experimental_data(col1=strain0, col2=stress0, plot_title="Solid TPU Cube", file_name="./TRL_solid_VTP_cube_stress_strain.png")
+    time3, disp3, force3, rows3 = get_data_from_test(file_path="./Vf3_sample_E2_measurement_1.csv")
+    time4, disp4, force4, rows4 = get_data_from_test(file_path="./Vf8_sample_E2_measurement_1.csv")
+    strain3, stress3 = get_stress_strain_from_data(displacement=list(disp3), force=list(force3), area=area1, start_length=L0_1)
+    strain4, stress4 = get_stress_strain_from_data(displacement=list(disp4), force=list(force4), area=area2, start_length=L0_2)
 
-    # Plot all tests together
+    # Plot each test case on it's own
+    plot_experimental_data(col1=strain0, col2=stress0, plot_title="Solid TPU Cube", file_name="./TRL_solid_VTP_cube_E1_stress_strain.png")
+    plot_experimental_data(col1=strain2, col2=stress2, plot_title="Vf=0.8 Composite Cube $E_1$", file_name="./TRL_Vf0p8_VTP_cube_E1_stress_strain.png")
+    plot_experimental_data(col1=strain4, col2=stress4, plot_title="Vf=0.8 Composite Cube $E_2$", file_name="./TRL_Vf0p8_VTP_cube_E2_stress_strain.png")
+    # only use first half of Vf=0.3 data
+    strain1, _ = split_list(strain1)
+    stress1, _ = split_list(stress1)
+    strain3, _ = split_list(strain3)
+    stress3, _ = split_list(stress3)
+    plot_experimental_data(col1=strain1, col2=stress1, plot_title="Vf=0.3 Composite Cube $E_1$", file_name="./TRL_Vf0p3_VTP_cube_E1_stress_strain.png")
+    plot_experimental_data(col1=strain3, col2=stress3, plot_title="Vf=0.3 Composite Cube $E_2$", file_name="./TRL_Vf0p3_VTP_cube_E2_stress_strain.png")
+
+    # Plot all exerpiments together
+    plot_all_experimental_data(col1_1=strain0, col2_1=stress0, col1_2=strain1, col2_2=stress1, col1_3=strain2, col2_3=stress2, plot_title="All Experimental E1 Data", file_name="./TRL_all_cube_E1_stress_strain.png")
 
     # Get model data for all three tests
 
